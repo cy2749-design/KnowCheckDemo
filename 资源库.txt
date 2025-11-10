@@ -1,0 +1,189 @@
+#	Type	Title	Link	Focus
+1	Article	Introduction to Large Language Models	https://developers.google.com/machine-learning/resources/intro-llms
+	High-level overview of LLMs, tokens, training idea, typical use cases.
+2	Article	Prompt Engineering Introduction (Google)	https://developers.google.com/machine-learning/resources/prompt-eng
+	Basics of prompts, clear instructions, examples, common patterns.
+3	Article	PromptingGuide.ai – Overview	https://www.promptingguide.ai/
+	Central hub of simple guides on prompts, LLM usage, safety.
+4	Article	Learn Prompting – Intro Course	https://learnprompting.org/
+	Free beginner course on generative AI and prompt design.
+5	Article	ChatGPT Prompt Engineering for Developers	https://www.deeplearning.ai/short-courses/chatgpt-prompt-engineering-for-developers/
+	Practical prompting patterns; first modules usable as non-technical intro.
+6	Article	What is a Prompt?	https://help.openai.com/en/articles/7042661-what-is-a-prompt
+	Plain explanation of prompts with simple examples.
+7	Article	A Beginner’s Guide to Large Language Models	https://www.freecodecamp.org/news/a-beginners-guide-to-large-language-models/
+	LLM concept, how they work in simple terms, everyday applications.
+8	Article	What is a Large Language Model? (Cloudflare)	https://blog.cloudflare.com/what-is-a-large-language-model/
+	Non-technical LLM explainer for general readers.
+9	Article	Large Language Model (LLM) Explained (TechTarget)	https://www.techtarget.com/whatis/definition/large-language-model-LLM
+	Glossary-style definition and key characteristics of LLMs.
+10	Article	AI Demystified: Large Language Models	https://uit.stanford.edu/news/ai-demystified-large-language-models
+	LLM basics aimed at staff and non-technical professionals.
+11	Article	What is Artificial Intelligence?	https://www.ibm.com/topics/artificial-intelligence
+	Intro to AI concepts, history, categories, examples.
+12	Article	What is Machine Learning?	https://www.ibm.com/topics/machine-learning
+	Basic idea of ML, types, common real-world uses.
+13	Article	AI vs. ML vs. Deep Learning vs. Neural Networks	https://www.ibm.com/blog/ai-vs-ml-vs-deep-learning-vs-neural-networks
+	Clarifies relationships between core AI concepts.
+14	Article	What is Deep Learning? (IBM)	https://www.ibm.com/think/topics/deep-learning
+	High-level deep learning intro, where it is used.
+15	Article	What is Deep Learning? (V7 Labs)	https://www.v7labs.com/blog/deep-learning-guide
+	Visual, beginner-friendly explanation of deep learning.
+16	Article	Deep Learning in Plain English	https://enterprisersproject.com/article/2019/7/deep-learning-explained-plain-english
+	Explains deep learning for managers and non-engineers.
+17	Article	Deep Learning Overview (Interaction Design Foundation)	https://www.interaction-design.org/literature/topics/deep-learning
+	Conceptual overview and practical examples.
+18	Article	What is a Neural Network? (TechTarget)	https://www.techtarget.com/searchenterpriseai/definition/neural-network
+	Simple explanation of neurons, layers, basic use cases.
+19	Article	Explained: Neural Networks	https://news.mit.edu/2017/explained-neural-networks-deep-learning-0414
+	Story-based introduction to how neural networks learn.
+20	Article	Supervised Learning (Concept Intro)	https://www.geeksforgeeks.org/supervised-learning/
+	Definition of supervised learning with labeled data examples.
+21	Article	Supervised Learning Explained (SuperAnnotate)	https://www.superannotate.com/blog/supervised-learning
+	Plain-language overview of supervised learning and labeling.
+22	Article	Supervised vs. Unsupervised Learning	https://www.scribbr.com/artificial-intelligence/supervised-vs-unsupervised-learning/
+	Simple comparison of key ML learning types.
+23	Article	Machine Learning Explained in 5 Minutes	https://365datascience.com/trending/machine-learning-explained-in-5-minutes/
+	Quick, non-technical ML and deep learning overview.
+24	Article	Effective Prompts for AI	https://mitsloanedtech.mit.edu/ai/basics/effective-prompts/
+	Practical rules for writing effective prompts.
+25	Article	Elements of a Prompt (PromptingGuide)	https://www.promptingguide.ai/introduction/elements
+	Breaks down instructions, context, examples, style.
+26	Article	Prompt Examples (PromptingGuide)	https://www.promptingguide.ai/introduction/examples
+	Ready-made prompt templates for common tasks.
+27	Article	Beginner’s Guide to Prompt Engineering	https://www.analyticsvidhya.com/blog/2023/05/a-beginners-guide-to-prompt-engineering/
+	Accessible introduction to prompt design best practices.
+28	Article	Beginner’s Guide to GenAI Prompts (UNC)	https://guides.lib.unc.edu/GenAI/prompts
+	Gentle guidance on writing prompts for gen AI tools.
+29	Article	How AI Works (Code.org)	https://code.org/artificial-intelligence
+	Short videos and activities explaining ML, NNs, LLM chatbots.
+30	Article	Generative AI for Education (Khan Academy)	https://www.khanacademy.org/college-careers-more/ai-for-education
+	Basics of generative AI and safe classroom use.
+31	Article	What is Retrieval-Augmented Generation? (AWS)	https://aws.amazon.com/what-is/retrieval-augmented-generation/
+	High-level RAG definition and simple diagrams.
+32	Article	What is Retrieval-Augmented Generation? (IBM)	https://www.ibm.com/think/topics/retrieval-augmented-generation
+	Conceptual RAG explainer for enterprises.
+33	Article	Retrieval-Augmented Generation (Google Cloud)	https://cloud.google.com/use-cases/retrieval-augmented-generation
+	Basic RAG framework, when and why to use it.
+34	Article	What is RAG? (NVIDIA Blog)	https://blogs.nvidia.com/blog/what-is-retrieval-augmented-generation/
+	RAG idea explained with intuitive examples.
+35	Article	RAG for Beginners (PromptHub)	https://www.prompthub.us/blog/retrieval-augmented-generation-guide
+	Non-technical RAG overview and use cases.
+36	Article	What is RAG in AI? (Codecademy)	https://www.codecademy.com/resources/blog/what-is-retrieval-augmented-generation
+	Step-by-step explanation of RAG workflow.
+37	Article	From RAG to Riches	https://medium.com/@alexgnibus/from-rag-to-riches-retrieval-augmented-generation-explained-2f55efdc7fa6
+	Story-style explanation of RAG concept.
+38	Article	Understanding Tokens & Context Windows	https://blog.mlq.ai/tokens-context-window-llms/
+	Intro to tokens and context window limits with examples.
+39	Article	What is a Context Window? (IBM)	https://www.ibm.com/think/topics/context-window
+	Explains context length as “working memory” of an LLM.
+40	Article	Context Window in AI (Nebius)	https://nebius.com/blog/posts/context-window-in-ai
+	Simple examples of how context size impacts responses.
+41	Article	ELI5: What is Tokenization?	https://plainenglish.io/blog/eli5-tokenization
+	Child-level explanation of splitting text into tokens.
+42	Article	ELI5: What is Context Length in LLMs?	https://plainenglish.io/blog/eli5-context-length
+	Easy explanation of context length and truncation.
+43	Article	A Beginner’s Guide to Vector Embeddings	https://www.pinecone.io/learn/vector-embeddings/
+	Intro to embeddings as numeric meaning of words/sentences.
+44	Article	ELI5: What is an Embedding?	https://plainenglish.io/blog/eli5-embeddings
+	Explains embeddings as vectors where distance means similarity.
+45	Article	A Gentle Introduction to Vector Databases	https://weaviate.io/blog/what-is-a-vector-database
+	High-level idea of searching by meaning using embeddings.
+46	Article	How LLMs Work, Explained Without Math	https://blog.miguelgrinberg.com/post/how-llms-work-explained-without-math
+	Non-math walkthrough of how LLMs generate text.
+47	Article	Transformer Model Visually Explained	https://poloclub.github.io/transformer-explainer/
+	Visual, interactive explanation of self-attention and transformer.
+48	Article	ELI5: What is Fine-Tuning in LLMs?	https://plainenglish.io/blog/eli5-fine-tuning-llms
+	Explains fine-tuning as “teaching” an existing model new tasks.
+49	Article	A Beginner’s Guide to Fine-Tuning LLMs	https://rasa.com/blog/fine-tuning-llm/
+	Conceptual reasons and simple overview of fine-tuning process.
+50	Article	Guidelines for Use of Generative AI Tools (Tufts)	https://it.tufts.edu/guidelines-use-generative-ai-tools
+	Practical do’s and don’ts for staff using gen AI.
+51	Article	Guidelines: Safe and Responsible GenAI (Cal State)	https://genai.calstate.edu/guidelines-safe-and-responsible-use-generative-ai-tools
+	Clear guidance on privacy, academic integrity, verification.
+52	Article	Employee Guidelines for Use of Generative AI	https://www.nyit.edu/policies/employee_guidelines_for_use_of_generative_ai
+	Workplace-focused rules for safe AI use.
+53	Article	Staff Generative AI Usage Guidance (UNC)	https://ai.unc.edu/staff-generative-ai-usage-guidance/
+	Simple principles: confidentiality, bias, oversight.
+54	Article	AI Content Quality Checklist	https://libril.com/blog/ai-content-quality-checklist
+	Checklist to review AI-generated content quality.
+55	Article	Measuring Effectiveness of AI-Generated Content	https://storyteq.com/blog/how-do-you-measure-the-effectiveness-of-ai-generated-content/
+	Explains metrics and checks for evaluating AI outputs.
+56	Video	Neural Networks Explained in 5 Minutes	https://www.youtube.com/watch?v=jmmW0F0biz0
+	Quick, visual intro to neural networks for beginners.
+57	Video	Super Simple Neural Network Explanation	https://www.youtube.com/watch?v=SV2huMdNs9c
+	One-neuron example to show decision-making.
+58	Video	Simple Explanation of Neural Networks	https://www.youtube.com/watch?v=2wrcv28ODNg
+	Layers and activation explained without math.
+59	Video	Neural Networks Explained for Beginners	https://www.youtube.com/watch?v=fa1vQqUGynI
+	Overview of how networks learn patterns.
+60	Video	Large Language Models Explained Briefly	https://www.youtube.com/watch?v=LPZh9BOjkQs
+	High-level LLM concept and “next word” idea.
+61	Video	Large Language Models – Everything You Need to Know	https://www.youtube.com/watch?v=osKyvYJ3PRM
+	LLM basics, capabilities, simple intuition.
+62	Video	Large Language Models Explained! How LLMs Work	https://www.youtube.com/watch?v=RhPKBmeYNuI
+	Visual explanation of LLM behavior and use cases.
+63	Video	Practical Introduction to Large Language Models	https://www.youtube.com/watch?v=tFHeUSJAYbE
+	How to use LLMs in practice, low technical barrier.
+64	Video	Generative AI Explained in 2 Minutes	https://www.youtube.com/watch?v=rwF-X5STYks
+	Very short explainer of generative AI.
+65	Video	Generative AI Explained in 5 Minutes	https://www.youtube.com/watch?v=NRmAXDWJVnU
+	Simple overview of what gen AI is and where it helps.
+66	Video	Introduction to Generative AI	https://www.youtube.com/watch?v=cZaNf2rA30k
+	Short intro to gen AI and LLMs.
+67	Video	What is Generative AI? (Salesforce)	https://www.youtube.com/watch?v=2u_dBCrU73U
+	Clear business-focused generative AI explainer.
+68	Video	Generative AI in a Nutshell	https://www.youtube.com/watch?v=2IK3DFHRFfw
+	High-level explanation of gen AI systems.
+69	Video	AI, ML, DL and Generative AI	https://www.youtube.com/watch?v=qYNweeDHiyU
+	Clarifies the core AI terms with visuals.
+70	Video	Learn Prompt Engineering: Beginner Crash Course	https://www.youtube.com/watch?v=LWiMwhDZ9as
+	Intro to prompt techniques with real examples.
+71	Video	Master Prompt Engineering for Beginners (7 Tips)	https://www.youtube.com/watch?v=qJ8f90aU8qw
+	Practical rules for writing better prompts.
+72	Video	Prompt Engineering for Beginners: Workshop	https://www.youtube.com/watch?v=QnZYrD5ia7c
+	Live-style intro from basics to intermediate patterns.
+73	Video	Complete Prompt Engineering Course for Beginners	https://www.youtube.com/watch?v=zAHvJAEyhZ0
+	Long-form walkthrough of prompt strategies.
+74	Video	What is Retrieval-Augmented Generation (RAG)?	https://www.youtube.com/watch?v=T-D1OfcDW1M
+	Intro to RAG with diagrams and examples.
+75	Video	RAG Explained for Beginners	https://www.youtube.com/watch?v=_HQ2H_0Ayy0
+	Simple retrieval + generation explanation.
+76	Video	RAG Explained in 8 Minutes	https://www.youtube.com/watch?v=HREbdmOSQ18
+	Concise breakdown of RAG and benefits.
+77	Video	RAG in 10 Minutes	https://www.youtube.com/watch?v=gweRh5Xtkq0
+	RAG workflow with everyday analogies.
+78	Video	Intro to RAG for AI	https://www.youtube.com/watch?v=Y08Nn23o_mY
+	High-level RAG overview for product/business audience.
+79	Video	Understand RAG in Under 8 Minutes	https://www.youtube.com/watch?v=DUCW0Aeo1AI
+	Simple RAG pipeline and use cases.
+80	Video	AI Explained: What is RAG?	https://www.youtube.com/watch?v=tKPSmn-urB4
+	Conceptual RAG explainer mapped to scenarios.
+81	Video	What Is a Context Window?	https://www.youtube.com/watch?v=FzQASENVTDQ
+	Explains context window using chat examples.
+82	Video	What is a Context Window? Unlocking LLM Secrets	https://www.youtube.com/watch?v=-QVoIxEpFkM
+	Friendly explanation of how much text LLMs can “see”.
+83	Video	Tokens, Parameters, Context Window (Simplified)	https://www.youtube.com/watch?v=r17HV0TzAWw
+	Ties together core LLM building blocks conceptually.
+84	Video	What Are Tokens in Large Language Models?	https://www.youtube.com/watch?v=K8crRCC7Dzg
+	Short visual explanation of tokens.
+85	Video	What Are Vector Embeddings?	https://www.youtube.com/watch?v=bGNYyK1L41g
+	Intro to embeddings as semantic vectors.
+86	Video	Vector Databases Simply Explained	https://www.youtube.com/watch?v=dN0lsF2cvm4
+	Explains searching by meaning using vectors.
+87	Video	Vector Search and Embeddings	https://www.youtube.com/watch?v=YlAWtEAJl9g
+	Basic overview of semantic search concepts.
+88	Video	Transformer Neural Network Simply Explained	https://www.youtube.com/watch?v=8_KVSMupRAw
+	High-level transformer concepts without heavy math.
+89	Video	Transformer Networks, ChatGPT’s Foundation	https://www.youtube.com/watch?v=zxQyTK8quyY
+	Visual explainer of transformer idea behind LLMs.
+90	Video	Fine-Tuning LLM Explained Simply	https://www.youtube.com/watch?v=ezdIOLbUSWg
+	Explains fine-tuning in business-friendly language.
+91	Video	Practice Using AI Responsibly (Google AI Essentials)	https://www.youtube.com/watch?v=TShPEH5cgPM
+	Basics of safe and responsible AI tool use.
+92	Video	Using Generative AI Responsibly [Part]	https://www.youtube.com/watch?v=YOp-e1GjZdA
+	Covers verification, biases, and human oversight.
+93	Video	Using Generative AI Responsibly (InterSystems)	https://www.youtube.com/watch?v=X0_7XHNdd8k
+	Enterprise-focused guidance on safe gen AI usage.
+94	Video	AI Content Quality & Evaluation (Representative)	https://www.youtube.com/results?search_query=ai+content+quality+checklist
+	Example searches for simple guides on checking AI outputs.
