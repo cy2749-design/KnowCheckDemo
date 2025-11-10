@@ -1,55 +1,65 @@
-# AI素养诊断器 v1.5 (Demo版)
+# AI Literacy Diagnoser v1.5 (Demo Version)
+A 3-5 minute lightweight, game-style self-assessment tool designed for AI beginners.
 
-面向AI基础用户的3-5分钟轻量小游戏式自测工具。
+## Tech Stack
 
-## 技术栈
+**Frontend**
+- React + TypeScript + TailwindCSS + Vite
 
-- **前端**: React + TypeScript + TailwindCSS + Vite
-- **后端**: Node.js + Express + TypeScript
-- **拖拽交互**: react-dnd
+**Backend**
+- Node.js + Express + TypeScript
 
-## 🚀 一键启动
+**Drag-and-Drop Interaction**
+- react-dnd
 
-### Windows 用户
+## 🚀 One-Click Start
 
-双击运行 `start.bat` 文件，或在命令行执行：
+### For Windows Users
+Double-click to run
+`start.bat`
+file, or execute in the command line:
+
 
 ```bash
 start.bat
 ```
 
-### Mac/Linux 用户
+### For Mac/Linux Users
 
 ```bash
 chmod +x start.sh
 ./start.sh
 ```
 
-### 或使用 npm 命令
+### Alternatively, use npm commands
 
 ```bash
-# 首次运行需要安装依赖
+# The first run requires installing dependencies
 npm run install:all
 
-# 之后直接启动
+# Then start directly
 npm start
-# 或
+# Or
 npm run dev
 ```
 
-## 📋 配置说明
+## 📋 Configuration Instructions
 
-### Gemini API 配置
+### Gemini API Configuration
+The API Key is configured in
+`server/src/config/api.ts`.
+To modify it:
 
-API Key 已配置在 `server/src/config/api.ts` 中。如需修改：
+**Method 1: Directly modify the code**
+Edit
+`server/src/config/api.ts`
+and change the
+`apiKey`
+field.
 
-**方式一：直接修改代码**
-
-编辑 `server/src/config/api.ts`，修改 `apiKey` 字段。
-
-**方式二：使用环境变量（推荐）**
-
-创建 `server/.env` 文件：
+**Method 2: Use environment variables (Recommended)**
+Create a file
+`server/.env`:
 
 ```env
 GEMINI_API_KEY=your_api_key_here
@@ -59,43 +69,46 @@ SESSION_SECRET=your_session_secret_here
 CORS_ORIGIN=http://localhost:5173
 ```
 
-## 🌐 访问应用
 
-启动成功后，打开浏览器访问：
+## 🌐 Accessing the App
+After a successful start, open your browser and visit:
 
-- **前端应用**: http://localhost:5173
-- **后端API**: http://localhost:3000
-- **健康检查**: http://localhost:3000/health
+**Frontend App**: http://localhost:5173
 
-## ⚠️ 常见问题
+**Backend API**: http://localhost:3000
 
-### 前端依赖安装失败（patch-package 错误）
+**Health Check**: http://localhost:3000/health
 
-如果遇到 `patch-package` 相关错误：
+## ⚠️ Common Issues
 
-**解决方案**：双击运行 `修复并启动.bat`
-- 此脚本使用 `--ignore-scripts` 跳过有问题的 postinstall 脚本
-- 会自动修复并启动服务
+### Frontend dependency installation failed (patch-package error)
+If you encounter
+`patch-package`
+related errors:
 
-### 连接被拒绝 (ERR_CONNECTION_REFUSED)
+**Solution**: Double-click to run
+`修复并启动.bat`
+This script uses
+`--ignore-scripts`
+to skip problematic postinstall scripts.
 
-如果看到"连接被拒绝"错误，说明服务没有启动：
+### Connection refused (ERR_CONNECTION_REFUSED)
+If you see a "connection refused" error, it means the server is not running:
+1. **First run**: Double-click `start.bat` (will automatically install dependencies and start the service)
+2. **Repair and start**: Double-click `修复并启动.bat` (repairs issues and starts the service)
+3. **Subsequent runs**: Double-click `启动服务.bat` (directly starts the service)
+For detailed troubleshooting, see: `TROUBLESHOOTING.md`
 
-1. **首次运行**：双击 `start.bat`（会自动安装依赖并启动）
-2. **修复并启动**：双击 `修复并启动.bat`（修复问题并启动）
-3. **后续运行**：双击 `启动服务.bat`（直接启动服务）
-
-详细故障排除请查看：`TROUBLESHOOTING.md`
-
-## 项目结构
+## Project Structure
 
 ```
-├── client/          # 前端React应用
-├── server/          # 后端Express服务
+├── client/          # Frontend React app
+├── server/          # Backend Express service
 └── README.md
 ```
 
-## API接口说明
 
-后端已预留标准化的LLM调用接口，你只需在 `server/src/services/llmService.ts` 中实现 `callGeminiAPI` 方法即可。
+## API Interface Description
+The backend provides a standardized LLM calling interface. You only need to implement the `callGeminiAPI` method in `server/src/services/llmService.ts`.
+
 
