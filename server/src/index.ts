@@ -2,14 +2,19 @@ import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
 import session from 'express-session';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import apiRoutes from './routes/api.js';
 import { APP_CONFIG } from './config/api.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const app = express();
 
 // 中间件
 app.use(cors({
-  origin: APP_CONFIG.corsOrigin,
+  origin: APP_CONFIG.corsOrigin === '*' ? true : APP_CONFIG.corsOrigin,
   credentials: true,
 }));
 
@@ -20,7 +25,9 @@ app.use(session({
   resave: false,
   saveUninitialized: false,
   cookie: {
-    secure: false, // Demo版，HTTP即可
+    secure: APP_CONFIG.isProduction, // 生产环境使用 HTTPS
+    httpOnly: true,
+    sameSite: APP_CONFIG.isProduction ? 'none' : 'lax',
     maxAge: 3600000, // 1小时
   },
 }));
@@ -32,6 +39,19 @@ app.use('/api', apiRoutes);
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', version: '1.5.0' });
 });
+
+// 生产环境：提供静态文件服务（如果前端和后端部署在一起）
+if (APP_CONFIG.isProduction) {
+  try {
+    app.use(express.static(path.join(__dirname, '../../client/dist')));
+    app.get('*', (req, res) => {
+      res.sendFile(path.join(__dirname, '../../client/dist/index.html'));
+    });
+  } catch (error) {
+    // 如果静态文件不存在，忽略错误（前后端分离部署时）
+    console.log('静态文件服务未启用（前后端分离部署）');
+  }
+}
 
 // 启动服务器
 const PORT = APP_CONFIG.port;

@@ -1,6 +1,9 @@
-import { Question, Feedback, Summary, AnswerResult } from './types';
+import { Question, Feedback, Summary, AnswerResult, UserInfo } from './types';
 
-const API_BASE = '/api';
+// 支持环境变量配置 API 地址，生产环境可通过 VITE_API_URL 设置
+const API_BASE = import.meta.env.VITE_API_URL 
+  ? `${import.meta.env.VITE_API_URL}/api`
+  : '/api';
 
 export interface StartResponse {
   sessionId: string;
@@ -18,20 +21,36 @@ export interface SummaryResponse {
 }
 
 /**
- * 开始测试
+ * 开始测试（带自我认知评分）
  */
-export async function startTest(): Promise<StartResponse> {
-  const response = await fetch(`${API_BASE}/start`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-  });
+export async function startTestWithSelfRating(userInfo: UserInfo): Promise<StartResponse> {
+  console.log('发送请求到:', `${API_BASE}/start`, '数据:', userInfo);
   
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
-    throw new Error(errorData.error || `Failed to start test (${response.status})`);
+  try {
+    const response = await fetch(`${API_BASE}/start`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(userInfo),
+    });
+    
+    console.log('收到响应:', response.status, response.statusText);
+    
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+      console.error('API错误:', errorData);
+      throw new Error(errorData.error || `Failed to start test (${response.status})`);
+    }
+    
+    const data = await response.json();
+    console.log('API成功返回:', data);
+    return data;
+  } catch (error: any) {
+    console.error('网络错误:', error);
+    if (error.message) {
+      throw error;
+    }
+    throw new Error(`Network error: ${error.message || 'Failed to connect to server'}`);
   }
-  
-  return response.json();
 }
 
 /**
@@ -83,17 +102,35 @@ export async function submitAnswer(
  * 获取总结
  */
 export async function getSummary(sessionId: string): Promise<Summary> {
-  const response = await fetch(`${API_BASE}/summary`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ sessionId }),
-  });
+  console.log('📊 Requesting summary for session:', sessionId);
   
-  if (!response.ok) {
-    throw new Error('Failed to get summary');
+  try {
+    const response = await fetch(`${API_BASE}/summary`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ sessionId }),
+    });
+    
+    console.log('📊 Summary response status:', response.status, response.statusText);
+    
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+      console.error('❌ Summary API error:', errorData);
+      throw new Error(errorData.error || `Failed to get summary (${response.status})`);
+    }
+    
+    const data = await response.json();
+    console.log('✅ Summary received:', {
+      hasOverall: !!data.summary?.overall,
+      highlightsCount: data.summary?.highlights?.length || 0,
+      blindspotsCount: data.summary?.blindspots?.length || 0,
+      hasRadarData: !!data.summary?.radarData,
+      resourcesCount: data.summary?.learningResources?.length || 0,
+    });
+    return data.summary;
+  } catch (error: any) {
+    console.error('❌ getSummary error:', error);
+    throw error;
   }
-  
-  const data = await response.json();
-  return data.summary;
 }
 

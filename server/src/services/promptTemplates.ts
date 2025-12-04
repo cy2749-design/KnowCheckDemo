@@ -26,8 +26,114 @@ Output Requirements:
 6. **CRITICAL: ALL content MUST be in English - questions, options, explanations, feedback - EVERYTHING**
 `;
 
-export function getQuestionTemplate(type: QuestionType, concept: string, conceptDescription?: string): string {
+const DIFFICULTY_GUIDANCE: Record<number, string> = {
+  1: `
+**Self-Assessment Level: 1/5 (Beginner)**
+- Use very simple language and explain fundamental terms explicitly
+- Focus on core definitions and straightforward cause-effect relationships
+- Avoid multi-step reasoning; keep scenarios concrete and relatable
+`,
+  2: `
+**Self-Assessment Level: 2/5 (Novice)**
+- Use plain language with light technical vocabulary
+- Introduce slightly more detailed scenarios but keep reasoning linear
+- Emphasize conceptual clarity and common misunderstandings
+`,
+  3: `
+**Self-Assessment Level: 3/5 (Intermediate)**
+- Use balanced technical language and real-world application scenarios
+- Encourage moderate reasoning steps and comparison of alternatives
+- Highlight trade-offs, decision points, or mid-level implementation details
+`,
+  4: `
+**Self-Assessment Level: 4/5 (Advanced)**
+- Use professional terminology and multi-step scenarios
+- Expect the learner to synthesize concepts across different AI components
+- Include nuanced edge cases, evaluation criteria, or optimization choices
+`,
+  5: `
+**Self-Assessment Level: 5/5 (Expert)**
+- Use expert-level vocabulary and high-complexity scenarios
+- Challenge the learner with ambiguous situations requiring judgment
+- Encourage deep analysis, referencing architectural, ethical, or scaling considerations
+`
+};
+
+export function getQuestionTemplate(
+  type: QuestionType, 
+  concept: string, 
+  conceptDescription?: string,
+  userInfo?: { age: number; role: 'student' | 'professional' | 'educator' | 'researcher' | 'entrepreneur' | 'other'; selfRating?: number }
+): string {
   const conceptContext = conceptDescription ? `Concept Description: ${conceptDescription}` : '';
+  
+  // 根据用户身份确定情境
+  let scenarioContext = '';
+  if (userInfo) {
+    if (userInfo.role === 'student') {
+      scenarioContext = `
+**CRITICAL: Scenario Requirements for Students:**
+- ALL scenarios MUST be set in American educational contexts (e.g., American high schools, colleges, universities)
+- Use American educational terminology (e.g., "professor", "semester", "GPA", "dorm", "campus")
+- Focus on academic scenarios: writing essays, research papers, studying for exams, group projects, presentations
+- NEVER use workplace or professional scenarios
+- Examples: "You're a college student at an American university...", "You're working on a research paper for your American history class...", "Your professor asks you to..."
+`;
+    } else if (userInfo.role === 'professional') {
+      scenarioContext = `
+**CRITICAL: Scenario Requirements for Working Professionals:**
+- ALL scenarios MUST be set in American workplace contexts (e.g., American companies, offices, business environments)
+- Use American business terminology (e.g., "meeting", "deadline", "client", "quarterly report", "team standup")
+- Focus on professional scenarios: writing emails, creating reports, presentations, client communications, project management
+- NEVER use academic or school scenarios
+- Examples: "You're a product manager at a tech company in Silicon Valley...", "Your team needs to prepare a quarterly business report...", "A client asks you to..."
+`;
+    } else if (userInfo.role === 'educator') {
+      scenarioContext = `
+**CRITICAL: Scenario Requirements for Educators:**
+- ALL scenarios MUST be set in American educational contexts (e.g., American schools, universities, teaching environments)
+- Use American educational terminology (e.g., "curriculum", "lesson plan", "student assessment", "classroom")
+- Focus on teaching scenarios: creating lesson plans, grading assignments, student interactions, curriculum development
+- Examples: "You're a teacher at an American high school...", "You need to create a lesson plan...", "Your students ask you about..."
+`;
+    } else if (userInfo.role === 'researcher') {
+      scenarioContext = `
+**CRITICAL: Scenario Requirements for Researchers:**
+- ALL scenarios MUST be set in American research contexts (e.g., American universities, research institutions, labs)
+- Use American research terminology (e.g., "research paper", "peer review", "conference", "publication", "grant proposal")
+- Focus on research scenarios: writing papers, conducting experiments, analyzing data, presenting findings
+- Examples: "You're a researcher at an American university...", "You're preparing a research paper for publication...", "Your research team needs to..."
+`;
+    } else if (userInfo.role === 'entrepreneur') {
+      scenarioContext = `
+**CRITICAL: Scenario Requirements for Entrepreneurs:**
+- ALL scenarios MUST be set in American business/startup contexts (e.g., American startups, business environments, Silicon Valley)
+- Use American business/startup terminology (e.g., "pitch deck", "venture capital", "MVP", "customer acquisition", "scaling")
+- Focus on entrepreneurial scenarios: business planning, product development, fundraising, market analysis, team building
+- Examples: "You're an entrepreneur starting a tech company in Silicon Valley...", "You need to prepare a pitch deck...", "Your startup needs to..."
+`;
+    } else {
+      scenarioContext = `
+**CRITICAL: Scenario Requirements:**
+- ALL scenarios MUST be set in American cultural and social contexts
+- Use American terminology and cultural references
+- Can include both everyday life and general professional scenarios
+- Examples: "You're planning a trip using American travel services...", "You need to write a recommendation letter in American format..."
+`;
+    }
+    
+    if (userInfo.selfRating) {
+      const rating = Math.max(1, Math.min(5, Math.round(userInfo.selfRating)));
+      scenarioContext += DIFFICULTY_GUIDANCE[rating];
+    }
+  } else {
+    scenarioContext = `
+**CRITICAL: Scenario Requirements:**
+- ALL scenarios MUST be set in American cultural and social contexts
+- Use American terminology, cultural references, and social norms
+- Examples should reflect American workplace, educational, or daily life contexts
+`;
+  }
   
   const basePrompt = `
 You are an AI literacy education expert. Generate a ${getTypeName(type)} question to test the user's understanding of the "${concept}" concept.
@@ -38,12 +144,15 @@ ${KNOWLEDGE_SCOPE}
 
 ${OUTPUT_REQUIREMENTS}
 
+${scenarioContext}
+
 **Important Requirements:**
 - Question content should be novel and diverse, avoiding repetitive common examples
-- Can be combined with practical application scenarios (work, study, life)
+- Can be combined with practical application scenarios (work, study, life) - but MUST match user's role context
 - Can design some counter-intuitive but important edge cases
 - Question wording should be vivid and interesting, avoiding dullness
 - **MANDATORY: Generate ALL content in English - question text, options, explanations, everything**
+- **MANDATORY: ALL scenarios must reflect American culture, society, and contexts**
 `;
 
   switch (type) {
@@ -146,7 +255,7 @@ Output JSON format (ALL TEXT IN ENGLISH):
 `;
 
     default:
-      throw new Error(`未知题型: ${type}`);
+      throw new Error(`Unknown question type: ${type}`);
   }
 }
 
@@ -274,13 +383,15 @@ Result: ${resultText}
 Standard explanation: ${shortExplanation}
 
 Please generate personalized immediate feedback (3-5 sentences), requirements:
-1. **MUST analyze based on the user's specific answer content**, pointing out which parts of the answer demonstrate correct understanding of the concept
-2. If the answer is incomplete, point out which key points are missing
-3. If the answer is incorrect, kindly point out the problems and explain the correct understanding
-4. Use a friendly, encouraging tone, and can provide improvement suggestions
-5. Must mention a specific knowledge point
-6. Do not use attacking or sarcastic expressions
+1. **MUST analyze based on the user's ACTUAL answer content word-by-word**. Quote specific parts of their answer that demonstrate correct understanding or misunderstanding
+2. Point out EXACTLY which key points they covered and which they missed, based on what they actually wrote
+3. If the answer is incorrect or incomplete, quote the problematic parts and explain what the correct understanding should be
+4. Reference specific knowledge points from the concept being tested
+5. Use a friendly, encouraging tone, and provide improvement suggestions
+6. Do not make generic statements - every point must reference their actual answer
 7. **CRITICAL: Output feedback in English ONLY**
+
+**Example of good feedback**: "You mentioned '[quote from user's answer]' which shows you understand [concept]. However, you didn't address [specific key point], which is important because [explanation]."
 
 Output only the feedback text, not JSON format.
 `;
@@ -359,8 +470,51 @@ export function getSummaryTemplate(results: Array<{
     patterns.push('All questions answered correctly, very solid foundation');
   }
   
+  // 获取知识库内容作为参考
+  const knowledgeBaseContext = `
+**AI/ML Knowledge Base Reference:**
+
+**LLM Concepts:**
+- Large Language Models work through next-word prediction, trained on massive text corpora
+- Pre-training: learning general patterns from large-scale general data
+- Fine-tuning/Instruction tuning: continued training on specific tasks or styles
+- Context windows: the amount of text a model can process at once
+- Tokenization: breaking text into smaller units (tokens) for processing
+- LLMs are not "conscious" - they predict text based on statistical patterns
+
+**Prompt Engineering:**
+- Effective prompts use clear instructions, examples (few-shot learning), and structured formats
+- Common patterns: chain-of-thought, role-playing, step-by-step reasoning
+- Prompt quality directly affects output quality - not "magic spells" but structured instructions
+
+**Deep Learning:**
+- Neural networks: interconnected layers of nodes (neurons) that learn patterns
+- Activation functions: introduce non-linearity (ReLU, sigmoid, tanh)
+- Backpropagation: how networks learn by adjusting weights based on errors
+- Deep learning is a subset of machine learning using multi-layer neural networks
+
+**RAG (Retrieval-Augmented Generation):**
+- Combines retrieval (finding relevant information) with generation (creating responses)
+- Uses vector databases to store and search embeddings
+- Semantic search: finding information by meaning, not just keywords
+- Enables LLMs to access up-to-date or domain-specific information
+
+**Responsible AI:**
+- Bias: models can perpetuate or amplify biases in training data
+- Safety: ensuring AI systems don't produce harmful outputs
+- Quality evaluation: checking outputs for accuracy, relevance, and appropriateness
+- Ethical considerations: privacy, transparency, accountability
+
+**Machine Learning Basics:**
+- Supervised learning: learning from labeled examples
+- Unsupervised learning: finding patterns in unlabeled data
+- AI > Machine Learning > Deep Learning: hierarchical relationship
+`;
+
   return `
-You are an AI literacy education expert who needs to deeply analyze the user's quiz performance and generate a detailed diagnostic report.
+You are an AI literacy education expert with deep knowledge of AI/ML concepts. You need to deeply analyze the user's quiz performance and generate a comprehensive, insightful diagnostic report.
+
+${knowledgeBaseContext}
 
 The user completed an AI literacy assessment test. Here are the detailed quiz records:
 
@@ -372,25 +526,60 @@ Statistics:
 - Easily misunderstood concepts: ${incorrectConcepts.join(', ') || 'None'}
 - Answer patterns: ${patterns.join('; ') || 'No obvious pattern'}
 
-Please think deeply and generate a concise and effective diagnostic summary in JSON format:
+**CRITICAL REQUIREMENTS:**
+
+1. **Deep Analysis Required**: Think deeply about the user's performance patterns. Analyze WHY they struggled with certain concepts and what this reveals about their understanding level. Don't just list concepts - provide insights.
+
+2. **Reference Knowledge Base**: When discussing concepts, you MUST reference specific knowledge points from the knowledge base above. For example:
+   - If they struggled with LLM: explain next-word prediction, pre-training vs fine-tuning
+   - If they struggled with RAG: explain retrieval mechanisms, vector databases, semantic search
+   - If they struggled with Deep Learning: explain neural network architecture, activation functions
+   - Make your analysis specific and educational, referencing actual technical concepts
+
+3. **Actionable Insights**: Provide insights that help the user understand:
+   - What specific misunderstandings they have (be specific about the misconception)
+   - What the correct understanding should be (reference knowledge base)
+   - Why these concepts are important in practice
+   - How to bridge their knowledge gaps (specific learning paths)
+
+4. **Language**: ALL content MUST be in English, no exceptions.
+
+Please generate a comprehensive diagnostic summary in JSON format:
 {
-  "overall": "One overall assessment (within 150 characters, be specific, don't be vague, point out the user's real level)",
-  "highlights": ["Highlight 1 (within 100 characters, specifically explain what the user has mastered and why it's important)", "Highlight 2 (within 100 characters)"],
-  "blindspots": ["Blind spot 1 (within 100 characters, specifically explain where the user's understanding is wrong and why)", "Blind spot 2 (within 100 characters)"],
-  "suggestions": ["Suggestion 1 (within 120 characters, be specific and actionable, targeting specific concepts)", "Suggestion 2 (within 120 characters)"],
-  "detailedAnalysis": "A concise analysis (450-600 characters), must include: 1. User's overall level (1-2 sentences, be specific) 2. Core weak points analysis (1-2 sentences, point out key problems) 3. How to improve (1-2 sentences, give specific directions)",
+  "overall": "A specific, insightful overall assessment (150-200 characters). Be precise about the user's actual level based on their specific answers, not vague. Reference specific concepts they struggled with and what this indicates.",
+  "highlights": [
+    "Highlight 1 (100-120 characters): Specifically explain what the user mastered based on their actual answers, why it's important (reference knowledge base), and what it indicates about their understanding",
+    "Highlight 2 (100-120 characters): Another specific strength with educational context, based on their actual performance"
+  ],
+  "blindspots": [
+    "Blind spot 1 (100-120 characters): Specifically explain where the user's understanding is wrong based on their actual answers, what the correct understanding should be (reference knowledge base), and why this matters",
+    "Blind spot 2 (100-120 characters): Another specific weakness with educational context and knowledge base references, based on their actual mistakes"
+  ],
+  "suggestions": [
+    "Suggestion 1 (120-150 characters): Be specific and actionable, targeting specific concepts the user struggled with. Reference learning approaches from knowledge base",
+    "Suggestion 2 (120-150 characters): Another specific, actionable recommendation with knowledge base context, addressing their specific weak points"
+  ],
+  "detailedAnalysis": "A comprehensive analysis (700-900 characters) that MUST include: 1. User's overall level assessment with specific evidence from their actual answers - quote or reference what they answered (2-3 sentences) 2. Deep analysis of core weak points - explain the concepts they misunderstood based on their actual answers, what the correct understanding is (reference knowledge base), and why it matters (3-4 sentences) 3. Specific improvement roadmap - how to address each weak point based on their actual performance, what to learn first, and how concepts connect (2-3 sentences). Throughout, reference specific AI/ML knowledge points from the knowledge base above and their actual answer patterns.",
+  "radarData": {
+    "categories": ["Category1", "Category2", "Category3", "Category4", "Category5", "Category6"],
+    "scores": [score1, score2, score3, score4, score5, score6]
+  },
   "learningResources": []
 }
 
-Important requirements:
-- All content should be concise and effective, don't pad length
-- overall should be specific but concise (within 150 characters)
-- highlights and blindspots each 1-2 items, each within 100 characters
-- suggestions should be specific and actionable (each within 120 characters)
-- detailedAnalysis should be concise (450-600 characters), not exceeding 600 characters, focus on core issues
-- Avoid repetition and redundancy, each part should be valuable
-- learningResources leave empty for now, will be generated separately
-- **CRITICAL: ALL content MUST be in English**
+**CRITICAL for radarData**:
+- Analyze the user's performance across different concept areas
+- Generate 4-6 categories based on the concepts they answered questions about
+- Calculate scores (0-100) for each category based on their actual performance
+- Categories should be meaningful (e.g., "LLM Basics", "Prompt Engineering", "RAG", "Responsible AI", etc.)
+- Scores should reflect: correct=100, partial=50, incorrect=0, then average per category
+
+**Quality Standards:**
+- Be specific, not generic. Reference actual concepts and knowledge points from the knowledge base.
+- Show deep understanding of AI/ML education, not surface-level observations.
+- Provide educational value - help the user understand WHY, not just WHAT.
+- All content in English only.
+- detailedAnalysis should be comprehensive and insightful (700-900 characters), referencing knowledge base throughout.
 `;
 }
 

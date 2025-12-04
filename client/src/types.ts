@@ -63,7 +63,24 @@ export interface Summary {
   suggestions: string[];
   learningResources?: LearningResource[];
   detailedAnalysis?: string;
+  radarData?: RadarData; // 雷达图数据
+  selfRating?: number; // 1-5 self-perception rating
+  systemLevel?: number; // 1-5 system-calculated level
 }
 
 export type AnswerResult = 'correct' | 'partial' | 'incorrect';
+
+// 用户信息类型
+export type UserRole = 'student' | 'professional' | 'educator' | 'researcher' | 'entrepreneur' | 'other';
+export interface UserInfo {
+  age: number;
+  role: UserRole;
+  selfRating: number; // 1-5 self perception
+}
+
+// 雷达图数据
+export interface RadarData {
+  categories: string[]; // 类别名称，如 ['LLM', 'Prompt Engineering', 'Deep Learning', ...]
+  scores: number[]; // 每个类别的得分（0-100）
+}
 

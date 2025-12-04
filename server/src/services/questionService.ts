@@ -107,7 +107,8 @@ export async function generateQuestion(
   type?: QuestionType,
   questionIndex?: number,
   totalQuestions?: number,
-  sessionId?: string
+  sessionId?: string,
+  userInfo?: { age: number; role: 'student' | 'professional' | 'educator' | 'researcher' | 'entrepreneur' | 'other'; selfRating?: number }
 ): Promise<Question | null> {
   // 如果指定了题型，直接使用
   let selectedType: QuestionType;
@@ -154,27 +155,50 @@ export async function generateQuestion(
     sessionUsedConcepts.get(sessionId)!.add(selected.concept);
   }
   
-  const prompt = getQuestionTemplate(selectedType, selected.concept, selected.description);
+  const prompt = getQuestionTemplate(selectedType, selected.concept, selected.description, userInfo);
   
-  console.log(`生成题目 - Session: ${sessionId || 'N/A'}, 索引: ${questionIndex ?? 'N/A'}, 题型: ${selectedType}, 概念: ${selected.concept}`);
+  const userLabel = userInfo ? `${userInfo.role}-L${userInfo.selfRating ?? 'N/A'}` : 'N/A';
+  console.log(`生成题目 - Session: ${sessionId || 'N/A'}, 索引: ${questionIndex ?? 'N/A'}, 题型: ${selectedType}, 概念: ${selected.concept}, 用户: ${userLabel}`);
   
   try {
     const llmResponse = await callGeminiAPI({
       prompt,
       temperature: 0.8,
-      maxTokens: 2048,
+      maxTokens: 4096, // 增加token限制，避免MAX_TOKENS错误
     });
     
     if (llmResponse.error || !llmResponse.content) {
-      console.error('❌ 生成题目失败 - API错误:', llmResponse.error);
-      console.error('LLM返回内容:', llmResponse.content?.substring(0, 500));
+      console.error('❌ Failed to generate question - API error:', llmResponse.error);
+      console.error('LLM response content:', llmResponse.content?.substring(0, 500));
+      
+      // 如果是MAX_TOKENS错误，尝试增加token限制重试
+      if (llmResponse.error?.includes('MAX_TOKENS')) {
+        console.warn('⚠️ MAX_TOKENS error, retrying with higher token limit...');
+        try {
+          const retryResponse = await callGeminiAPI({
+            prompt,
+            temperature: 0.8,
+            maxTokens: 8192, // 大幅增加token限制
+          });
+          if (retryResponse.content) {
+            console.log('✅ Retry successful with higher token limit');
+            const question = parseLLMJSON<Question>(retryResponse.content);
+            if (question && validateQuestion(question)) {
+              console.log('✅ Question generated successfully after retry');
+              return question;
+            }
+          }
+        } catch (retryError: any) {
+          console.error('❌ Retry also failed:', retryError);
+        }
+      }
       
       // 如果是配额超限或其他严重错误，使用降级方案
-      if (llmResponse.error?.includes('429') || llmResponse.error?.includes('配额') || llmResponse.error?.includes('quota')) {
-        console.warn('⚠️ API配额超限，使用降级题目');
+      if (llmResponse.error?.includes('429') || llmResponse.error?.includes('quota')) {
+        console.warn('⚠️ API quota exceeded, using fallback question');
         const fallbackQuestion = getFallbackQuestion(targetType, questionIndex ?? 0);
         if (fallbackQuestion) {
-          console.log('✅ 使用降级题目，类型:', fallbackQuestion.type, '概念:', fallbackQuestion.concept);
+          console.log('✅ Using fallback question, type:', fallbackQuestion.type, 'concept:', fallbackQuestion.concept);
           // 确保概念标记正确
           if (sessionId && questionIndex !== undefined) {
             if (!sessionUsedConcepts.has(sessionId)) {
@@ -400,49 +424,68 @@ export async function generateFeedback(
     const shortAnswerQ = question as any;
     const keyPoints = shortAnswerQ.key_points || [];
     
-    // 使用LLM评估简答题答案质量
+    // 使用LLM评估简答题答案质量 - 必须成功，不允许fallback
     const evaluationPrompt = `
-你是一个AI素养教育专家。请评估用户对简答题的回答质量。
+You are an AI literacy education expert. Please evaluate the quality of the user's answer to a short answer question.
 
-题目情境：${shortAnswerQ.scenario || shortAnswerQ.question_text}
+Question scenario: ${shortAnswerQ.scenario || shortAnswerQ.question_text}
 
-答案要点（需要覆盖的关键点）：
+Key points (that need to be covered):
 ${keyPoints.map((p: string, i: number) => `${i + 1}. ${p}`).join('\n')}
 
-用户答案：${userAnswerText}
+User's answer: "${userAnswerText}"
 
-请评估用户答案的质量，输出JSON格式：
+**CRITICAL**: You MUST carefully read and analyze the user's actual answer content. Do not make assumptions. Base your evaluation on what the user actually wrote.
+
+Please evaluate the quality of the user's answer and output in JSON format:
 {
   "result": "correct" | "partial" | "incorrect",
-  "reason": "简要说明评估理由（1-2句话）"
+  "reason": "Brief explanation of the evaluation (1-2 sentences) based on the user's actual answer"
 }
 
-评估标准：
-- correct: 答案完整覆盖了所有关键要点，理解准确
-- partial: 答案覆盖了部分要点，但不够完整或有理解偏差
-- incorrect: 答案基本没有覆盖关键要点，或理解有严重错误
+Evaluation criteria:
+- correct: The answer fully covers all key points with accurate understanding
+- partial: The answer covers some points but is incomplete or has understanding deviations
+- incorrect: The answer basically does not cover the key points, or has serious understanding errors
 
-只输出JSON，不要其他文字。
+Output only JSON, no other text.
 `;
     
-    try {
-      const evalResponse = await callGeminiAPI({
-        prompt: evaluationPrompt,
-        temperature: 0.3, // 降低温度以获得更一致的评估
-        maxTokens: 256,
-      });
-      
-      if (evalResponse.content) {
-        const evalResult = parseLLMJSON<{ result: AnswerResult; reason?: string }>(evalResponse.content);
-        if (evalResult && evalResult.result) {
-          finalResult = evalResult.result;
-          isCorrect = finalResult === 'correct';
-          console.log(`📝 简答题评估结果: ${finalResult}${evalResult.reason ? ` - ${evalResult.reason}` : ''}`);
+    let evalResponse = await callGeminiAPI({
+      prompt: evaluationPrompt,
+      temperature: 0.3,
+      maxTokens: 1024, // 增加token限制以支持思考过程
+    });
+    
+    // 如果遇到MAX_TOKENS错误，自动重试
+    if (evalResponse.error?.includes('MAX_TOKENS')) {
+      console.warn('⚠️ Short answer evaluation hit MAX_TOKENS, retrying with higher limit...');
+      try {
+        evalResponse = await callGeminiAPI({
+          prompt: evaluationPrompt,
+          temperature: 0.3,
+          maxTokens: 2048, // 大幅增加token限制
+        });
+        if (evalResponse.content) {
+          console.log('✅ Short answer evaluation retry successful with higher token limit');
         }
+      } catch (retryError: any) {
+        console.error('❌ Short answer evaluation retry also failed:', retryError);
       }
-    } catch (error) {
-      console.error('简答题评估失败，使用默认结果:', error);
     }
+    
+    if (evalResponse.error || !evalResponse.content) {
+      throw new Error(`Failed to evaluate short answer: ${evalResponse.error || 'LLM did not return content'}`);
+    }
+    
+    const evalResult = parseLLMJSON<{ result: AnswerResult; reason?: string }>(evalResponse.content);
+    if (!evalResult || !evalResult.result) {
+      throw new Error('Failed to parse short answer evaluation result');
+    }
+    
+    finalResult = evalResult.result;
+    isCorrect = finalResult === 'correct';
+    console.log(`📝 Short answer evaluation result: ${finalResult}${evalResult.reason ? ` - ${evalResult.reason}` : ''}`);
   }
   
   const prompt = getFeedbackTemplate(
@@ -455,30 +498,33 @@ ${keyPoints.map((p: string, i: number) => `${i + 1}. ${p}`).join('\n')}
     correctAnswer
   );
   
-  const llmResponse = await callGeminiAPI({
+  let llmResponse = await callGeminiAPI({
     prompt,
     temperature: 0.7,
-    maxTokens: 512, // 增加token以支持更详细的反馈
+    maxTokens: 2048, // 增加token以支持更详细的反馈
   });
   
-  if (llmResponse.error || !llmResponse.content) {
-    // 降级到简单反馈
-    let fallbackMessage = '';
-    if (finalResult === 'correct') {
-      fallbackMessage = `回答得很好！${question.short_explanation}`;
-    } else if (finalResult === 'partial') {
-      fallbackMessage = `回答部分正确。${question.short_explanation}`;
-    } else {
-      fallbackMessage = `回答需要改进。${question.short_explanation}`;
+  // 如果遇到MAX_TOKENS错误，自动重试
+  if (llmResponse.error?.includes('MAX_TOKENS')) {
+    console.warn('⚠️ Feedback generation hit MAX_TOKENS, retrying with higher limit...');
+    try {
+      llmResponse = await callGeminiAPI({
+        prompt,
+        temperature: 0.7,
+        maxTokens: 4096, // 大幅增加token限制
+      });
+      if (llmResponse.content) {
+        console.log('✅ Feedback retry successful with higher token limit');
+      }
+    } catch (retryError: any) {
+      console.error('❌ Feedback retry also failed:', retryError);
     }
-    
-    // 对于简答题，isCorrect始终设为true，因为简答题是评析而不是判断对错
-    const fallbackIsCorrect = question.type === 'short_answer' ? true : isCorrect;
-    
-    return {
-      message: fallbackMessage,
-      isCorrect: fallbackIsCorrect,
-    };
+  }
+  
+  if (llmResponse.error || !llmResponse.content) {
+    // NO FALLBACK - throw error if LLM fails
+    console.error('❌ LLM feedback generation failed:', llmResponse.error);
+    throw new Error(`Failed to generate feedback: ${llmResponse.error || 'LLM did not return content'}`);
   }
   
   // 对于简答题，isCorrect始终设为true，因为简答题是评析而不是判断对错

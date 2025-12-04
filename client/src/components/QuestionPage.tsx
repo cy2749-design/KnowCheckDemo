@@ -117,12 +117,23 @@ export default function QuestionPage({
         console.log('ℹ️ All questions completed, generating report...');
         onComplete(null as any); // 传递null表示正在生成
         try {
+          console.log('📊 Starting to generate summary...');
           const summary = await getSummary(sessionId);
+          console.log('✅ Summary generated successfully');
           onComplete(summary);
           return;
         } catch (summaryErr: any) {
-          console.error('Failed to get summary:', summaryErr);
-          alert('Failed to generate report: ' + summaryErr.message);
+          console.error('❌ Failed to get summary:', summaryErr);
+          console.error('Error details:', {
+            message: summaryErr.message,
+            stack: summaryErr.stack,
+            sessionId,
+          });
+          // 显示详细错误信息
+          const errorMsg = summaryErr.message || 'Unknown error occurred while generating report';
+          alert(`Failed to generate report: ${errorMsg}\n\nPlease check:\n1. Backend logs for LLM API errors\n2. Browser console (F12) for details\n3. API Key configuration`);
+          // 仍然切换到summary页面，但summary为null会显示loading
+          onComplete(null);
         }
       }
       

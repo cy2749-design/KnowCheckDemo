@@ -51,16 +51,15 @@ export async function callGeminiAPI(request: LLMRequest, retryCount: number = 0)
     if (!GEMINI_CONFIG.apiKey || GEMINI_CONFIG.apiKey === 'YOUR_API_KEY_HERE') {
       return {
         content: '',
-        error: 'API Key 未配置，请在 server/src/config/api.ts 中设置 GEMINI_API_KEY'
+        error: 'API Key not configured. Please set GEMINI_API_KEY in server/src/config/api.ts'
       };
     }
 
-    // 根据请求选择endpoint
+    // 统一使用 2.0 Flash 模型
     let endpoint = GEMINI_CONFIG.endpoint;
-    if (request.model === 'thinking' || request.useThinking) {
-      endpoint = GEMINI_CONFIG.summaryEndpoint;
-    } else if (request.model === 'pro') {
-      endpoint = GEMINI_CONFIG.proEndpoint;
+    // 忽略 model 参数，统一使用 Flash
+    if (request.model === 'thinking' || request.useThinking || request.model === 'pro') {
+      console.log('⚠️ Model parameter ignored, using 2.0 Flash endpoint.');
     }
 
     const url = `${endpoint}?key=${GEMINI_CONFIG.apiKey}`;
@@ -98,11 +97,21 @@ export async function callGeminiAPI(request: LLMRequest, retryCount: number = 0)
 
       // 429 错误：配额超限，不重试
       if (response.status === 429) {
-        console.error('❌ Gemini API 配额超限 (429)');
-        console.error('错误详情:', errorData);
+        console.error('❌ Gemini API quota exceeded (429)');
+        console.error('Error details:', errorData);
         return {
           content: '',
-          error: `API配额超限 (429): ${errorData.error?.message || '请求过于频繁或配额已用完。请检查 API Key 的配额设置，或稍后再试。'}`
+          error: `API quota exceeded (429): ${errorData.error?.message || 'Request too frequent or quota exhausted. Please check API Key quota settings or try again later.'}`
+        };
+      }
+      
+      // 400/401/403 错误：API Key问题
+      if (response.status === 400 || response.status === 401 || response.status === 403) {
+        console.error(`❌ Gemini API authentication error (${response.status})`);
+        console.error('Error details:', errorData);
+        return {
+          content: '',
+          error: `API authentication failed (${response.status}): ${errorData.error?.message || 'Invalid API Key or insufficient permissions. Please check your API Key configuration.'}`
         };
       }
 
@@ -113,24 +122,49 @@ export async function callGeminiAPI(request: LLMRequest, retryCount: number = 0)
         return callGeminiAPI(request, retryCount + 1);
       }
 
-      console.error('Gemini API 错误:', response.status, errorText);
+      console.error('❌ Gemini API error:', response.status);
+      console.error('Error details:', errorText.substring(0, 500));
       return {
         content: '',
-        error: `API请求失败: ${response.status} - ${errorText.substring(0, 200)}`
+        error: `API request failed: ${response.status} - ${errorText.substring(0, 200)}`
       };
     }
 
     const data: any = await response.json();
     
+    // 检查finishReason
+    const finishReason = data.candidates?.[0]?.finishReason;
+    if (finishReason === 'MAX_TOKENS') {
+      console.warn('⚠️ Response hit MAX_TOKENS limit. Content may be truncated.');
+      // 即使达到MAX_TOKENS，也尝试提取已有内容
+    }
+    
     // 解析Gemini响应
     const content = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
     
     if (!content) {
-      console.error('API响应格式异常:', JSON.stringify(data).substring(0, 500));
+      console.error('❌ API response format error: no text content found');
+      console.error('Response structure:', JSON.stringify(data, null, 2).substring(0, 1000));
+      console.error('Finish reason:', finishReason);
+      console.error('Usage metadata:', data.usageMetadata);
+      
+      // 如果是MAX_TOKENS且没有内容，建议增加token限制
+      if (finishReason === 'MAX_TOKENS') {
+        return {
+          content: '',
+          error: 'Response hit MAX_TOKENS limit. Please increase maxTokens or simplify the prompt.'
+        };
+      }
+      
       return {
         content: '',
-        error: 'API响应格式异常，未找到文本内容。响应: ' + JSON.stringify(data).substring(0, 200)
+        error: 'API response format error, no text content found. Response: ' + JSON.stringify(data).substring(0, 200)
       };
+    }
+    
+    // 如果达到MAX_TOKENS但仍有内容，记录警告
+    if (finishReason === 'MAX_TOKENS') {
+      console.warn(`⚠️ Content truncated at MAX_TOKENS. Received ${content.length} characters.`);
     }
 
     if (retryCount > 0) {
@@ -147,10 +181,10 @@ export async function callGeminiAPI(request: LLMRequest, retryCount: number = 0)
       return callGeminiAPI(request, retryCount + 1);
     }
 
-    console.error('调用API时出错:', error);
+    console.error('❌ Error calling API:', error);
     return {
       content: '',
-      error: `调用API时出错: ${error.message}`
+      error: `Error calling API: ${error.message}`
     };
   }
 }
@@ -224,10 +258,11 @@ export async function callGeminiAPIWithGrounding(request: LLMRequest, retryCount
         return callGeminiAPIWithGrounding(request, retryCount + 1);
       }
 
-      console.error('Gemini API 错误:', response.status, errorText);
+      console.error('❌ Gemini API error:', response.status);
+      console.error('Error details:', errorText.substring(0, 500));
       return {
         content: '',
-        error: `API请求失败: ${response.status} - ${errorText.substring(0, 200)}`
+        error: `API request failed: ${response.status} - ${errorText.substring(0, 200)}`
       };
     }
 
@@ -276,10 +311,10 @@ export async function callGeminiAPIWithGrounding(request: LLMRequest, retryCount
       return callGeminiAPIWithGrounding(request, retryCount + 1);
     }
 
-    console.error('调用API时出错:', error);
+    console.error('❌ Error calling API:', error);
     return {
       content: '',
-      error: `调用API时出错: ${error.message}`
+      error: `Error calling API: ${error.message}`
     };
   }
 }

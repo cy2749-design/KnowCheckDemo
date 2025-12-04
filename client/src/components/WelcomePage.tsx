@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { startTest } from '../api';
-import { Question } from '../types';
+import { UserInfo, UserRole, Question } from '../types';
+import { startTestWithSelfRating } from '../api';
 
 interface WelcomePageProps {
   onStart: (sessionId: string, question: Question) => void;
@@ -9,16 +9,34 @@ interface WelcomePageProps {
 export default function WelcomePage({ onStart }: WelcomePageProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showForm, setShowForm] = useState(true);
+  const [age, setAge] = useState<number>(25);
+  const [role, setRole] = useState<UserRole>('professional');
+  const [selfRating, setSelfRating] = useState<number | null>(null);
 
-  const handleStart = async () => {
-    setLoading(true);
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
     setError(null);
     
+    if (selfRating === null) {
+      setError('Please rate your current understanding of AI (1-5) before starting.');
+      return;
+    }
+    const userInfo: UserInfo = {
+      age,
+      role,
+      selfRating,
+    };
+    
+    console.log('提交用户信息:', userInfo, 'Self rating:', selfRating);
+    
     try {
-      const { sessionId, question } = await startTest();
+      setLoading(true);
+      const { sessionId, question } = await startTestWithSelfRating(userInfo);
       onStart(sessionId, question);
     } catch (err: any) {
-      setError(err.message || 'Failed to start, please try again');
+      console.error('Failed to start assessment:', err);
+      setError(err.message || 'Failed to start assessment, please try again.');
     } finally {
       setLoading(false);
     }
@@ -28,26 +46,24 @@ export default function WelcomePage({ onStart }: WelcomePageProps) {
     <div className="min-h-screen flex items-center justify-center p-6 bg-background">
       <div className="w-full max-w-2xl">
         {/* Main card */}
-        <div className="bg-card rounded-2xl shadow-sm border border-border p-12 text-center">
+        <div className="bg-card rounded-2xl shadow-sm border border-border p-12">
           {/* Icon */}
-          <div className="inline-flex items-center justify-center w-20 h-20 bg-primary/10 rounded-2xl mb-8">
-            <svg
-              className="w-10 h-10 text-primary"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-              strokeWidth={1.5}
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456zM16.894 20.567L16.5 21.75l-.394-1.183a2.25 2.25 0 00-1.423-1.423L13.5 18.75l1.183-.394a2.25 2.25 0 001.423-1.423l.394-1.183.394 1.183a2.25 2.25 0 001.423 1.423l1.183.394-1.183.394a2.25 2.25 0 00-1.423 1.423z"
-              />
-            </svg>
-          </div>
-
-          {/* Logo and Title */}
-          <div className="mb-10">
+          <div className="text-center mb-8">
+            <div className="inline-flex items-center justify-center w-20 h-20 bg-primary/10 rounded-2xl mb-6">
+              <svg
+                className="w-10 h-10 text-primary"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+                strokeWidth={1.5}
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456zM16.894 20.567L16.5 21.75l-.394-1.183a2.25 2.25 0 00-1.423-1.423L13.5 18.75l1.183-.394a2.25 2.25 0 001.423-1.423l.394-1.183.394 1.183a2.25 2.25 0 001.423 1.423l1.183.394-1.183.394a2.25 2.25 0 00-1.423 1.423z"
+                />
+              </svg>
+            </div>
             <div className="mb-6 flex items-center justify-center gap-3">
               <div className="relative">
                 <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center shadow-lg">
@@ -61,7 +77,8 @@ export default function WelcomePage({ onStart }: WelcomePageProps) {
                 <div className="text-sm text-muted-foreground font-medium">AI Literacy Assessment</div>
               </div>
             </div>
-            <h1 className="text-4xl font-semibold text-foreground tracking-tight text-balance">Test Your AI Knowledge</h1>
+            <h1 className="text-4xl font-semibold text-foreground tracking-tight text-balance mb-2">Test Your AI Knowledge</h1>
+            <p className="text-muted-foreground">Please provide some information to personalize your assessment</p>
           </div>
 
           {/* Error message */}
@@ -80,29 +97,107 @@ export default function WelcomePage({ onStart }: WelcomePageProps) {
             </div>
           )}
 
-          {/* CTA button */}
-          <button
-            onClick={handleStart}
-            disabled={loading}
-            className="px-10 py-4 bg-primary text-primary-foreground text-lg font-semibold rounded-xl shadow-sm hover:bg-primary-hover hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-sm"
-          >
-            {loading ? (
-              <span className="flex items-center gap-3">
-                <svg className="animate-spin w-5 h-5" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                  <path
-                    className="opacity-75"
-                    fill="currentColor"
-                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                  ></path>
-                </svg>
-                Loading
-              </span>
-            ) : (
-              "Start Assessment"
-            )}
-          </button>
+          {/* User Info Form */}
+          {showForm && (
+            <form onSubmit={handleSubmit} className="space-y-6 mb-6">
+              {/* Age */}
+              <div>
+                <label htmlFor="age" className="block text-sm font-medium text-foreground mb-2">
+                  Age
+                </label>
+                <input
+                  type="number"
+                  id="age"
+                  min="13"
+                  max="100"
+                  value={age}
+                  onChange={(e) => setAge(parseInt(e.target.value) || 25)}
+                  required
+                  className="w-full px-4 py-3 bg-muted border border-border rounded-xl text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                />
+              </div>
 
+              {/* Role */}
+              <div>
+                <label htmlFor="role" className="block text-sm font-medium text-foreground mb-2">
+                  Your Role
+                </label>
+                <select
+                  id="role"
+                  value={role}
+                  onChange={(e) => setRole(e.target.value as UserRole)}
+                  required
+                  className="w-full px-4 py-3 bg-muted border border-border rounded-xl text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                >
+                  <option value="student">Student</option>
+                  <option value="professional">Working Professional</option>
+                  <option value="educator">Educator / Teacher</option>
+                  <option value="researcher">Researcher</option>
+                  <option value="entrepreneur">Entrepreneur / Business Owner</option>
+                  <option value="other">Other</option>
+                </select>
+              </div>
+
+              {/* Self-perception rating (1-5) */}
+              <div>
+                <label htmlFor="level" className="block text-sm font-medium text-foreground mb-2">
+                  How would you rate your current understanding of AI?
+                </label>
+                <div className="space-y-3">
+                  {[1, 2, 3, 4, 5].map((value) => (
+                    <label
+                      key={value}
+                      className={`flex items-center gap-4 p-3 rounded-xl border-2 cursor-pointer transition-all ${
+                        selfRating === value
+                          ? 'border-primary bg-primary/5'
+                          : 'border-border hover:border-primary/50 hover:bg-muted/50'
+                      }`}
+                    >
+                      <input
+                        type="radio"
+                        name="selfRating"
+                        value={value}
+                        checked={selfRating === value}
+                        onChange={() => setSelfRating(value)}
+                        className="w-5 h-5 text-primary focus:ring-primary focus:ring-2"
+                      />
+                      <span className="text-sm text-foreground">
+                        {value}.{' '}
+                        {value === 1 && 'I barely understand it'}
+                        {value === 2 && 'I know a little'}
+                        {value === 3 && 'I have a moderate understanding'}
+                        {value === 4 && 'I understand it better than most people'}
+                        {value === 5 && 'I am close to a professional level'}
+                      </span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              {/* Submit button */}
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full px-10 py-4 bg-primary text-primary-foreground text-lg font-semibold rounded-xl shadow-sm hover:bg-primary-hover hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-sm"
+              >
+                {loading ? (
+                  <span className="flex items-center justify-center gap-3">
+                    <svg className="animate-spin w-5 h-5" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path
+                        className="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                      ></path>
+                    </svg>
+                    Starting...
+                  </span>
+                ) : (
+                  "Start Assessment"
+                )}
+              </button>
+            </form>
+          )}
         </div>
       </div>
     </div>

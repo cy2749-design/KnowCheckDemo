@@ -214,7 +214,7 @@ export function getLearningResourcesForConcepts(weakConcepts: string[]): Learnin
       title: r.title,
       url: r.link,
       type: r.type === 'Video' ? 'video' : 'article',
-      description: r.focus || `关于${r.title}的学习资源`,
+      description: r.focus || `Learning resource about ${r.title}`,
     }));
   
   console.log(`✅ 为 ${weakConcepts.length} 个薄弱概念推荐了 ${learningResources.length} 个资源`);

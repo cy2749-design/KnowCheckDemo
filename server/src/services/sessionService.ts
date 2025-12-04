@@ -1,5 +1,5 @@
 import { v4 as uuidv4 } from 'uuid';
-import { SessionData } from '../types/session.js';
+import { SessionData, UserInfo } from '../types/session.js';
 import { Question } from '../types/question.js';
 import { clearSessionQuestionData } from './questionService.js';
 
@@ -9,7 +9,7 @@ const sessions = new Map<string, SessionData>();
 /**
  * 创建新Session
  */
-export function createSession(): SessionData {
+export function createSession(userInfo?: UserInfo): SessionData {
   const sessionId = uuidv4();
   const session: SessionData = {
     sessionId,
@@ -18,6 +18,7 @@ export function createSession(): SessionData {
     results: [],
     preloadedQuestion: null,
     startedAt: Date.now(),
+    userInfo,
   };
   
   sessions.set(sessionId, session);
@@ -52,44 +53,62 @@ export async function preloadNextQuestion(
   generateQuestion: () => Promise<Question | null>
 ): Promise<void> {
   const session = getSession(sessionId);
-  if (!session) return;
+  if (!session) {
+    console.warn('⚠️ 预加载: Session不存在');
+    return;
+  }
   
   // 如果已经有预加载的题目，不重复加载
   if (session.preloadedQuestion) {
-    console.log('已有预加载题目，跳过');
+    console.log('✅ 已有预加载题目，跳过');
     return;
   }
   
-  // 检查是否还需要预加载（现在有6题，所以检查是否已经有6题）
-  if (session.questions.length >= 6) {
-    console.log('题目数量已足够，无需预加载');
+  // 检查是否还需要预加载
+  const totalQuestions = 6; // APP_CONFIG.totalQuestions
+  if (session.questions.length >= totalQuestions) {
+    console.log('✅ 题目数量已足够，无需预加载');
     return;
   }
+  
+  // 计算下一题的索引
+  const nextIndex = session.questions.length;
+  if (nextIndex >= totalQuestions) {
+    console.log('✅ 已到最后一题，无需预加载');
+    return;
+  }
+  
+  console.log(`🔄 开始预加载第 ${nextIndex + 1} 题...`);
   
   // 异步生成题目（不阻塞）
-  generateQuestion().then(question => {
-    const session = getSession(sessionId);
-    if (!session) {
+  // generateQuestion 函数已经在调用处传入了正确的参数（包括questionIndex和totalQuestions）
+  // 所以直接调用它即可，确保第6题（索引5）固定为简答题
+  try {
+    const question = await generateQuestion();
+    const sessionAfter = getSession(sessionId);
+    if (!sessionAfter) {
       console.warn('⚠️ 预加载完成时Session已不存在');
       return;
     }
     
     if (question) {
       // 再次检查是否还需要预加载（可能用户已经答完题了）
-      if (session.questions.length < 6) {
+      if (sessionAfter.questions.length < totalQuestions && !sessionAfter.preloadedQuestion) {
         updateSession(sessionId, { preloadedQuestion: question });
-        console.log(`✅ 预加载成功 - 第 ${session.questions.length + 1} 题，题型: ${question.type}`);
+        console.log(`✅ 预加载成功 - 第 ${sessionAfter.questions.length + 1} 题，题型: ${question.type}`);
       } else {
-        console.log('⚠️ 预加载完成但题目已足够，丢弃预加载题目');
+        console.log('⚠️ 预加载完成但题目已足够或已有预加载，丢弃预加载题目');
       }
     } else {
       console.error('❌ 预加载生成题目失败: 返回 null');
       // 不设置预加载题目，让下次请求时同步生成
     }
-  }).catch(error => {
+  } catch (error: any) {
     console.error('❌ 预加载题目异常:', error);
     console.error('异常堆栈:', error.stack);
-  });
+    // 抛出错误以便调用者知道预加载失败
+    throw error;
+  }
 }
 
 /**

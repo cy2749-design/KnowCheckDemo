@@ -87,6 +87,12 @@ export interface LearningResource {
   description?: string;
 }
 
+// 雷达图数据
+export interface RadarData {
+  categories: string[]; // 类别名称，如 ['LLM', 'Prompt Engineering', 'Deep Learning', ...]
+  scores: number[]; // 每个类别的得分（0-100）
+}
+
 // 最终总结
 export interface Summary {
   overall: string; // 总评
@@ -95,5 +101,8 @@ export interface Summary {
   suggestions: string[]; // 建议
   learningResources?: LearningResource[]; // 学习资源推荐
   detailedAnalysis?: string; // 详细分析
+  radarData?: RadarData; // 雷达图数据
+  selfRating?: number; // 1-5 self-perception rating
+  systemLevel?: number; // 1-5 system-calculated level
 }
 

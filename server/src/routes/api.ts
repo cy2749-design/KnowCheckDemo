@@ -2,7 +2,8 @@ import express from 'express';
 import { createSession, getSession, updateSession, getNextQuestion, preloadNextQuestion } from '../services/sessionService.js';
 import { generateQuestion, evaluateAnswer, generateFeedback } from '../services/questionService.js';
 import { generateSummary, generateLearningResources } from '../services/summaryService.js';
-import { QuestionResult, UserAnswer } from '../types/question.js';
+import { QuestionResult, UserAnswer, Question } from '../types/question.js';
+import { UserInfo } from '../types/session.js';
 import { APP_CONFIG } from '../config/api.js';
 
 const router = express.Router();
@@ -12,21 +13,80 @@ const router = express.Router();
  */
 router.post('/start', async (req, res) => {
   try {
-    const session = createSession();
+    const { age, role, selfRating } = req.body; // { age, role, selfRating }
     
-    // 立即预加载第一题（使用题型分配策略）
-    console.log('开始生成第一题...');
-    const firstQuestion = await generateQuestion(undefined, undefined, 0, APP_CONFIG.totalQuestions, session.sessionId);
+    console.log('收到启动请求，用户信息:', { age, role, selfRating });
+    
+    // 验证selfRating（必须存在且为1-5）
+    if (typeof selfRating !== 'number' || selfRating < 1 || selfRating > 5) {
+      console.error('selfRating无效:', selfRating);
+      return res.status(400).json({ error: 'Missing or invalid selfRating. Must be a number between 1 and 5' });
+    }
+    
+    // 验证用户信息
+    if (!age && age !== 0) {
+      console.error('缺少用户信息对象');
+      return res.status(400).json({ error: 'Missing user information (age, role, test level)' });
+    }
+    
+    // 转换age为数字（如果它是字符串）
+    const ageNum = typeof age === 'string' ? parseInt(age, 10) : age;
+    
+    if (typeof ageNum !== 'number' || isNaN(ageNum) || ageNum < 13 || ageNum > 100) {
+      console.error('年龄无效:', age);
+      return res.status(400).json({ error: 'Age must be a number between 13 and 100' });
+    }
+    
+    if (!role || typeof role !== 'string') {
+      console.error('身份无效:', role);
+      return res.status(400).json({ error: 'Missing or invalid role information' });
+    }
+    
+    // 验证并转换 role 类型
+    const validRoles: UserInfo['role'][] = ['student', 'professional', 'educator', 'researcher', 'entrepreneur', 'other'];
+    const validatedRole = validRoles.includes(role as UserInfo['role']) 
+      ? (role as UserInfo['role'])
+      : 'other';
+    
+    if (!validRoles.includes(role as UserInfo['role'])) {
+      console.warn(`角色 "${role}" 不在有效列表中，使用默认值 "other"`);
+    }
+    
+    const validatedUserInfo: UserInfo = {
+      age: ageNum,
+      role: validatedRole,
+      selfRating,
+    };
+    
+    console.log('验证后的用户信息:', validatedUserInfo);
+    console.log('Self rating:', selfRating);
+    
+    const session = createSession(validatedUserInfo);
+    // 存储selfRating到session
+    session.selfRating = selfRating;
+    
+    // 立即预加载第一题（使用题型分配策略，传入用户信息）
+    console.log('开始生成第一题...', { userInfo: validatedUserInfo });
+    const firstQuestion = await generateQuestion(
+      undefined, 
+      undefined, 
+      0, 
+      APP_CONFIG.totalQuestions, 
+      session.sessionId,
+      validatedUserInfo
+    );
     if (!firstQuestion) {
       console.error('生成题目失败: 返回 null');
-      return res.status(500).json({ error: '生成题目失败：LLM 未返回有效题目，请检查 API Key 配置' });
+      return res.status(500).json({ error: 'Failed to generate question: LLM did not return a valid question. Please check API Key configuration' });
     }
     
     session.questions.push(firstQuestion);
     session.currentQuestionIndex = 0;
     
     // 异步预加载第二题
-    preloadNextQuestion(session.sessionId, () => generateQuestion(undefined, undefined, 1, APP_CONFIG.totalQuestions, session.sessionId));
+    preloadNextQuestion(session.sessionId, () => 
+      generateQuestion(undefined, undefined, 1, APP_CONFIG.totalQuestions, session.sessionId, validatedUserInfo)
+    );
     
     console.log('第一题生成成功，类型:', firstQuestion.type);
     res.json({
@@ -37,7 +97,7 @@ router.post('/start', async (req, res) => {
     console.error('启动测试失败:', error);
     const errorMessage = error.message || '未知错误';
     res.status(500).json({ 
-      error: `启动测试失败: ${errorMessage}。请检查后端日志或 API Key 配置。` 
+      error: `Failed to start test: ${errorMessage}. Please check backend logs or API Key configuration.` 
     });
   }
 });
@@ -50,12 +110,12 @@ router.post('/next-question', async (req, res) => {
     const { sessionId } = req.body;
     
     if (!sessionId) {
-      return res.status(400).json({ error: '缺少sessionId' });
+      return res.status(400).json({ error: 'Missing sessionId' });
     }
     
     const session = getSession(sessionId);
     if (!session) {
-      return res.status(404).json({ error: 'Session不存在' });
+      return res.status(404).json({ error: 'Session not found' });
     }
     
     // 检查当前应该获取第几题（基于已答题数量）
@@ -87,7 +147,7 @@ router.post('/next-question', async (req, res) => {
       const question = session.questions[nextQuestionIndex];
       if (!question) {
         console.error(`❌ 题目数组索引 ${nextQuestionIndex} 处为 null 或 undefined`);
-        return res.status(500).json({ error: '题目数据异常，请重试' });
+        return res.status(500).json({ error: 'Question data error, please try again' });
       }
       session.currentQuestionIndex = nextQuestionIndex;
       console.log(`✅ 返回已生成的第 ${nextQuestionIndex + 1} 题，类型: ${question.type}`);
@@ -96,6 +156,7 @@ router.post('/next-question', async (req, res) => {
     
     // 题目未生成，需要生成（优先使用预加载）
     let question: Question | null = null;
+    const userInfo = session.userInfo;
     
     // 先检查预加载的题目
     if (session.preloadedQuestion) {
@@ -110,11 +171,11 @@ router.post('/next-question', async (req, res) => {
     if (!question) {
       console.log(`⏳ 预加载未就绪，同步生成第 ${nextQuestionIndex + 1} 题...`);
       try {
-        question = await generateQuestion(undefined, undefined, nextQuestionIndex, APP_CONFIG.totalQuestions, sessionId);
+        question = await generateQuestion(undefined, undefined, nextQuestionIndex, APP_CONFIG.totalQuestions, sessionId, userInfo);
         if (!question) {
           console.error('❌ 生成题目失败: 返回 null');
           return res.status(500).json({ 
-            error: '生成题目失败，可能是 API 调用问题。请查看后端日志获取详细信息。' 
+            error: 'Failed to generate question, possibly an API call issue. Please check backend logs for details.' 
           });
         }
         session.questions.push(question);
@@ -123,7 +184,7 @@ router.post('/next-question', async (req, res) => {
       } catch (error: any) {
         console.error('❌ 生成题目异常:', error);
         return res.status(500).json({ 
-          error: `生成题目时发生错误: ${error.message}` 
+          error: `Error occurred while generating question: ${error.message}` 
         });
       }
     }
@@ -131,14 +192,14 @@ router.post('/next-question', async (req, res) => {
     // 验证题目是否成功生成
     if (!question) {
       console.error('❌ 严重错误: 题目生成后仍为 null');
-      return res.status(500).json({ error: '题目生成失败，请重试' });
+      return res.status(500).json({ error: 'Question generation failed, please try again' });
     }
     
     // 异步预加载再下一题（如果还没到最后一题）
     const nextQuestionCount = session.questions.length;
     if (nextQuestionCount < APP_CONFIG.totalQuestions) {
       console.log(`🔄 预加载第 ${nextQuestionCount + 1} 题...`);
-      preloadNextQuestion(sessionId, () => generateQuestion(undefined, undefined, nextQuestionCount, APP_CONFIG.totalQuestions, sessionId));
+      preloadNextQuestion(sessionId, () => generateQuestion(undefined, undefined, nextQuestionCount, APP_CONFIG.totalQuestions, sessionId, userInfo));
     } else {
       console.log('✅ 已生成所有题目，无需预加载');
     }
@@ -159,7 +220,7 @@ router.post('/submit-answer', async (req, res) => {
     const { sessionId, answer } = req.body;
     
     if (!sessionId || !answer) {
-      return res.status(400).json({ error: '缺少必要参数' });
+      return res.status(400).json({ error: 'Missing required parameters' });
     }
     
     const session = getSession(sessionId);
@@ -185,7 +246,7 @@ router.post('/submit-answer', async (req, res) => {
     if (session.results.length >= APP_CONFIG.totalQuestions) {
       console.log('⚠️ 已经答完所有题目，不应该再提交答案');
       return res.status(400).json({ 
-        error: '已经完成所有题目，请查看总结' 
+        error: 'All questions completed, please view summary' 
       });
     }
     
@@ -197,14 +258,14 @@ router.post('/submit-answer', async (req, res) => {
     if (currentQuestionIndex >= session.questions.length) {
       console.error(`题目未生成: 需要索引 ${currentQuestionIndex}, 但只有 ${session.questions.length} 题`);
       return res.status(400).json({ 
-        error: `题目尚未生成（第 ${currentQuestionIndex + 1} 题），请先获取题目` 
+        error: `Question not yet generated (Question ${currentQuestionIndex + 1}), please get question first` 
       });
     }
     
     const currentQuestion = session.questions[currentQuestionIndex];
     if (!currentQuestion) {
       console.error(`题目不存在: 索引 ${currentQuestionIndex}, 总题目数 ${session.questions.length}`);
-      return res.status(400).json({ error: '当前没有题目，请先获取题目' });
+      return res.status(400).json({ error: 'No current question, please get question first' });
     }
     
     // 评估答案
@@ -243,7 +304,20 @@ router.post('/submit-answer', async (req, res) => {
     
     console.log(`答题进度: ${answeredCount}/${APP_CONFIG.totalQuestions}, 完成: ${isComplete}`);
     
-    if (isComplete) {
+    // 如果还没完成，立即预加载下一题（不等待）
+    if (!isComplete) {
+      const nextQuestionIndex = session.results.length;
+      if (nextQuestionIndex < APP_CONFIG.totalQuestions) {
+        console.log(`🔄 提交答案后立即预加载第 ${nextQuestionIndex + 1} 题...`);
+        const userInfo = session.userInfo;
+        // 立即触发预加载，不等待
+        preloadNextQuestion(sessionId, () => 
+          generateQuestion(undefined, undefined, nextQuestionIndex, APP_CONFIG.totalQuestions, sessionId, userInfo)
+        ).catch(err => {
+          console.error('预加载失败，将在获取时同步生成:', err);
+        });
+      }
+    } else {
       console.log('🎉 所有题目已完成！');
     }
     
@@ -266,30 +340,50 @@ router.post('/summary', async (req, res) => {
     const { sessionId } = req.body;
     
     if (!sessionId) {
-      return res.status(400).json({ error: '缺少sessionId' });
+      return res.status(400).json({ error: 'Missing sessionId' });
     }
     
     const session = getSession(sessionId);
     if (!session) {
-      return res.status(404).json({ error: 'Session不存在' });
+      return res.status(404).json({ error: 'Session not found' });
     }
     
     if (session.results.length === 0) {
-      return res.status(400).json({ error: '还没有答题记录' });
+      return res.status(400).json({ error: 'No answer records yet' });
     }
     
     // 标记完成
     updateSession(sessionId, { completedAt: Date.now() });
     
     console.log('📊 开始生成诊断报告...');
+    console.log('📊 Session results count:', session.results.length);
+    console.log('📊 Results:', session.results.map(r => ({
+      concept: r.concept,
+      type: r.type,
+      result: r.result,
+    })));
+    
     // 生成总结（包含学习资源，会在generateSummary中生成）
-    const summary = await generateSummary(session.results);
+    const summary = await generateSummary(session.results, session.selfRating, session.questions || []);
     
     console.log('✅ 诊断报告生成完成');
+    console.log('✅ Summary structure:', {
+      hasOverall: !!summary.overall,
+      highlightsCount: summary.highlights?.length || 0,
+      blindspotsCount: summary.blindspots?.length || 0,
+      hasRadarData: !!summary.radarData,
+      radarCategories: summary.radarData?.categories?.length || 0,
+      resourcesCount: summary.learningResources?.length || 0,
+    });
+    
     res.json({ summary });
   } catch (error: any) {
-    console.error('生成总结失败:', error);
-    res.status(500).json({ error: error.message });
+    console.error('❌ 生成总结失败:', error);
+    console.error('❌ Error stack:', error.stack);
+    console.error('❌ Error message:', error.message);
+    res.status(500).json({ 
+      error: error.message || 'Failed to generate summary. Please check backend logs for details.' 
+    });
   }
 });
 
