@@ -54,8 +54,8 @@ if (APP_CONFIG.isProduction) {
 }
 
 // 启动服务器
-const PORT = typeof APP_CONFIG.port === 'string' ? parseInt(APP_CONFIG.port, 10) : APP_CONFIG.port;
-const HOST = process.env.HOST || '0.0.0.0';
+const PORT = Number(process.env.PORT) || 3000;
+const HOST = "0.0.0.0";
 app.listen(PORT, HOST, () => {
   console.log(`🚀 AI素养诊断器后端服务已启动`);
   console.log(`📍 地址: ${HOST}:${PORT}`);
