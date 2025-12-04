@@ -54,11 +54,12 @@ if (APP_CONFIG.isProduction) {
 }
 
 // 启动服务器
-const PORT = APP_CONFIG.port;
-app.listen(PORT, () => {
+const PORT = typeof APP_CONFIG.port === 'string' ? parseInt(APP_CONFIG.port, 10) : APP_CONFIG.port;
+const HOST = process.env.HOST || '0.0.0.0';
+app.listen(PORT, HOST, () => {
   console.log(`🚀 AI素养诊断器后端服务已启动`);
-  console.log(`📍 端口: ${PORT}`);
-  console.log(`🌐 健康检查: http://localhost:${PORT}/health`);
+  console.log(`📍 地址: ${HOST}:${PORT}`);
+  console.log(`🌐 健康检查: http://${HOST}:${PORT}/health`);
   console.log(`\n⚠️  请确保在 server/src/config/api.ts 中配置了 Gemini API 信息`);
 });
 
