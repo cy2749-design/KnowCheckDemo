@@ -120,8 +120,8 @@ export default function MatchQuestion({
               const matched = matches.some(([left]) => left === option.id);
               const userMatch =
                 showFeedback && userAnswer ? userAnswer.matches.find(([left]) => left === option.id) : null;
-              const isCorrect = userMatch && correctMatches.has(`${userMatch[0]}-${userMatch[1]}`);
-              const isWrong = userMatch && !isCorrect;
+              const isCorrect = userMatch ? correctMatches.has(`${userMatch[0]}-${userMatch[1]}`) : undefined;
+              const isWrong = userMatch ? !isCorrect : undefined;
 
               return (
                 <DraggableItem
@@ -148,8 +148,8 @@ export default function MatchQuestion({
               const matched = matches.some(([, right]) => right === option.id);
               const userMatch =
                 showFeedback && userAnswer ? userAnswer.matches.find(([, right]) => right === option.id) : null;
-              const isCorrect = userMatch && correctMatches.has(`${userMatch[0]}-${userMatch[1]}`);
-              const isWrong = userMatch && !isCorrect;
+              const isCorrect = userMatch ? correctMatches.has(`${userMatch[0]}-${userMatch[1]}`) : undefined;
+              const isWrong = userMatch ? !isCorrect : undefined;
 
               return (
                 <DraggableItem

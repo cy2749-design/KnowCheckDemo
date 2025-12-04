@@ -1,8 +1,8 @@
 import { Question, Feedback, Summary, AnswerResult, UserInfo } from './types';
 
 // 支持环境变量配置 API 地址，生产环境可通过 VITE_API_URL 设置
-const API_BASE = import.meta.env.VITE_API_URL 
-  ? `${import.meta.env.VITE_API_URL}/api`
+const API_BASE = (import.meta as any).env.VITE_API_URL 
+  ? `${(import.meta as any).env.VITE_API_URL}/api`
   : '/api';
 
 export interface StartResponse {
