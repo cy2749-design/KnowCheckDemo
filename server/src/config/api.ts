@@ -2,7 +2,7 @@
 // 请在这里填入你的 Gemini API 信息
 
 export const GEMINI_CONFIG = {
-  apiKey: process.env.GEMINI_API_KEY || 'AIzaSyDWdq6e45ECel7eG4BJEeBTHEn3jwkU3ho',
+  apiKey: process.env.GEMINI_API_KEY || 'AIzaSyAcTHMSZ6PGvrkq8DlIisJKDCAX6jq-aXs',
   // Gemini 2.0 Flash 模型（统一使用）
   endpoint: process.env.GEMINI_ENDPOINT || 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent',
   // 用于生成总结的模型（也使用 2.0 Flash）
